@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>My Flask App</title>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Make Your Argument</h1>
+      {% if cell_value %}
+        <div class="alert alert-success" role="alert">
+          The value of the cell is: {{ cell_value }}
+        </div>
+      {% endif %}
+      <form method="post" action="{{ url_for('index') }}">
+        <textarea name="text" rows="4" cols="80"></textarea>
+        <br>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </div>
+  </body>
+</html>
