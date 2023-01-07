@@ -1,0 +1,12 @@
+<html>
+  <head>
+    <title>Dashboard</title>
+  </head>
+  <body>
+    <h1>Welcome, {{ user_info['name'] }}</h1>
+    <p>You have submitted {{ num_arguments }} arguments.</p>
+    <form action="{{ url_for('argue_prompt') }}">
+      <button type="submit" class="btn btn-primary">Argue New Prompt</button>
+    </form>
+  </body>
+</html>

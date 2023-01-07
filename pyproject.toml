@@ -14,6 +14,7 @@ xds-protos = "^0.0.11"
 google-api-python-client = "^2.71.0"
 Flask-Bootstrap = "^3.3.7"
 pygsheets = "^2.0.6"
+Flask-Session = "^0.4.0"
 
 [tool.poetry.dev-dependencies]
 debugpy = "^1.6.2"
