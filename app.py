@@ -5,6 +5,21 @@ from flask import url_for, redirect, Flask, render_template, request
 
 app = Flask(__name__)
 
+@app.route('/', methods=['GET'])
+def welcome():
+    return render_template('welcome.html')
+
+@app.route('/terms_and_conditions', methods=['POST'])
+def accept_terms_and_conditions():
+    return redirect(url_for('argue_prompt'))
+
+@app.route('/argue_prompt', methods=['GET'])
+def argue_prompt():
+    # Retrieve the value of the cell from the Google Sheet
+    value = get_cell_value(SPREADSHEET_ID, RANGE_NAME)
+    # Render the template and pass the value of the cell and range name to it
+    return render_template('argue_prompt.html', cell_value=value, cell_range=RANGE_NAME)
+  
 # Set the environment variable for the service account key file
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/runner/Python/credential.json'
 
@@ -16,13 +31,6 @@ gc = pygsheets.authorize(service_file='/home/runner/Python/credential.json')
 SPREADSHEET_ID = "1-bjMr6J96uGQ6Nu8_VsQJclMyVcf1ovPxE8e4VCPwxs"
 
 RANGE_NAME = f"B{random_number}"
-
-@app.route('/', methods=['GET'])
-def index():
-    # Retrieve the value of the cell from the Google Sheet
-    value = get_cell_value(SPREADSHEET_ID, RANGE_NAME)
-    # Render the template and pass the value of the cell and range name to it
-    return render_template('index.html', cell_value=value, cell_range=RANGE_NAME)
 
 def get_cell_value(spreadsheet_id, range_name):
     """
@@ -46,7 +54,7 @@ def get_cell_value(spreadsheet_id, range_name):
         print(f'An error occurred: {e}')
         return None
 
-@app.route('/', methods=['POST'])
+@app.route('/argue_prompt', methods=['POST'])
 def handle_form_submission():
     # Retrieve the text from the form submission
     text = request.form['text']
