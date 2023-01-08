@@ -11,6 +11,14 @@ app = Flask(__name__)
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
+@app.route('/logout')
+def logout():
+  # Remove the user's session data
+  session.pop('logged_in', None)
+  session.pop('email', None)
+  session.pop('password', None)
+  # Redirect the user to the welcome page
+  return redirect(url_for('welcome'))
 
 @app.route('/', methods=['GET'])
 def welcome():
@@ -25,6 +33,11 @@ def accept_terms_and_conditions():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+  # Check if the user is already logged in
+  if session.get('logged_in'):
+    # Redirect the user to the dashboard page
+    return redirect(url_for('dashboard'))
+
   if request.method == 'POST':
     # Retrieve the form data
     email = request.form['email']
@@ -47,14 +60,14 @@ def login():
 
 def valid_login(email, password):
   """
-  Check if the provided email and password are valid.
+  Check if the provided email and password match the values in cells A1 and B2.
 
   Parameters:
     email (str): The email to check.
     password (str): The password to check.
 
   Returns:
-    bool: True if the email and password are valid, False otherwise.
+    bool: True if the email and password match the values in cells A1 and B2, False otherwise.
   """
   # Set the environment variable for the service account key file
   os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/runner/Python/credential.json'
@@ -63,20 +76,21 @@ def valid_login(email, password):
   gc = pygsheets.authorize(service_file='/home/runner/Python/credential.json')
 
   # Open the Google Sheet using pygsheets
-  sh = gc.open_by_key('YOUR_SHEET_ID')
+  sh = gc.open_by_key('1iHMPBMIcR9Xr6r2_er3MdG-q8sNiAdsgW5epnaPw_fo')
 
   # Select the first worksheet in the sheet
   worksheet = sh[0]
 
-  # Read the data from the sheet
-  data = worksheet.get_all_values()
+  # Read the data from cells A1 and B2
+  cell_a2 = worksheet.cell('A2').value
+  cell_b2 = worksheet.cell('B2').value
 
-  # Check if the provided email and password are in the sheet
-  for row in data:
-    if row[0] == email and row[1] == password:
-      return True
+  # Check if the provided email and password match the values in cells A1 and B2
+  if email == cell_a2 and password == cell_b2:
+    return True
 
   return False
+
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -84,19 +98,18 @@ def signup():
     # retrieve the form data
     email = request.form['email']
     password = request.form['password']
-    name = request.form['name']
-    age = request.form['age']
 
     # check if the email is already in use
     if email_in_use(email):
       # render the signup template with an error message
       return render_template('signup.html', error='Email already in use')
     else:
-      # add the email and password to the list of valid email/password combinations
-      add_credentials(email, password, name, age)
+      # add the email and password to the Google Sheet
+      add_credentials(email, password)
       # create a session for the user
       session['logged_in'] = True
       session['email'] = email
+      session['password'] = password
       # redirect the user to the dashboard page
       return redirect(url_for('dashboard'))
   else:
@@ -131,46 +144,55 @@ def email_in_use(email):
   else:
     return False
 
-def add_credentials(email, password, name, age):
-  """
-    Add the specified email, password, name, and age to a Google Sheet.
-    
-    Parameters:
-        email (str): The email address to add.
-        password (str): The password to add.
-        name (str): The user's name.
-        age (str): The user's age.
-    """
-
+def add_credentials(email, password):
   # Load the service account key file and authorize pygsheets to access the Google Sheets API
   gc = pygsheets.authorize(service_file='/home/runner/Python/credential.json')
 
   # Open the Google Sheet using pygsheets
   sh = gc.open_by_key('1iHMPBMIcR9Xr6r2_er3MdG-q8sNiAdsgW5epnaPw_fo')
 
-  # Select the first worksheet in the sheet
+  # Select the first sheet in the spreadsheet
   worksheet = sh[0]
 
-  # Write the user information to the sheet
-  worksheet.append_row([email, password, name, age])
+  # Update cell A2 with the email
+  cell_a2 = worksheet.cell((2, 1))
+  cell_a2.value = email
   
+  # Update cell B2 with the password
+  cell_b2 = worksheet.cell((2, 2))
+  cell_b2.value = password
+
+  # Save the updated cells
+  worksheet.update_cells([cell_a2, cell_b2])
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
+  # Check if the user is logged in
+  if 'logged_in' not in session:
+    # Redirect the user to the login page
+    return redirect(url_for('login'))
+
   # Retrieve the email of the logged in user from the session
   email = session['email']
 
   # Get the user's information from the Google Sheet
-  user_info = get_user_info(email)
+  email = get_user_info()
 
   # Get the number of arguments that the user has submitted
   num_arguments = get_num_arguments(email)
 
   # Render the template and pass the user's information and number of arguments to it
   return render_template('dashboard.html',
-                         user_info=user_info,
+                         email=email,
                          num_arguments=num_arguments)
+def get_user_info():
+  """
+  Retrieve the user's email address from the session.
 
+  Returns:
+    str: The email address of the user.
+  """
+  return session['email']
 
 def get_num_arguments(email):
   """

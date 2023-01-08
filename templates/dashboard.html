@@ -7,6 +7,7 @@
     <p>You have submitted {{ num_arguments }} arguments.</p>
     <form action="{{ url_for('argue_prompt') }}">
       <button type="submit" class="btn btn-primary">Argue New Prompt</button>
+      <a href="{{ url_for('logout') }}">Logout</a>
     </form>
   </body>
 </html>
